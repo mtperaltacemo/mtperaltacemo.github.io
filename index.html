@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Martín Peralta — Proyectos</title>
+<meta name="theme-color" content="#0B3D66">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-red: #0B3D66;
+    --bg-red-deep: #041B2E;
+    --panel: #0A2033;
+    --blue: #3E8FC4;
+    --yellow: #F2B705;
+    --text: #F3FBFF;
+    --muted: #B7C9D6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; min-height:100vh; font-family:'Inter',sans-serif; }
+  body {
+    background: radial-gradient(circle at 15% 10%, #0E4A79, #0B3D66 45%, #041B2E 100%);
+    color: var(--text);
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:60px 20px;
+  }
+  .wrap { width:100%; max-width:560px; text-align:center; }
+  h1 {
+    font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:.03em;
+    text-transform:uppercase; margin:0 0 6px; color:#FFFFFF;
+  }
+  .sub { font-size:14px; color:var(--muted); margin:0 0 34px; }
+  .card {
+    display:block; background:var(--panel); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:20px 22px; margin-bottom:14px; text-decoration:none;
+    color:var(--text); text-align:left; transition:transform .12s ease, border-color .12s ease;
+  }
+  .card:hover { transform:translateY(-2px); border-color:var(--blue); }
+  .card .name {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; color:var(--yellow);
+    margin-bottom:4px;
+  }
+  .card .desc { font-size:13.5px; color:var(--muted); line-height:1.5; }
+  footer { margin-top:30px; font-size:12px; color:#7D93A3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Martín Peralta</h1>
+  <p class="sub">Proyectos y apps</p>
+
+  <a class="card" href="https://mtperaltacemo.github.io/Juego-Retadores-SUD/index.html">
+    <div class="name">Retadores SUD</div>
+    <div class="desc">Trivia multijugador en tiempo real para jóvenes SUD — Biblia, Doctrina y Convenios, Libro de Mormón y más.</div>
+  </a>
+
+  <footer>&copy; 2026 Martín Peralta</footer>
+</div>
+</body>
+</html>
