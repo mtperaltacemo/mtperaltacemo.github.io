@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.mtperaltacemo.twa",
+    "sha256_cert_fingerprints": [
+      "F9:E8:92:A0:69:72:A3:8D:60:94:C9:24:E5:2F:6C:4A:C5:50:DB:D2:27:76:F3:B5:C4:A2:9D:10:38:8E:4D:6C"
+    ]
+  }
+}]
