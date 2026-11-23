@@ -1,11 +1,10 @@
-// Pega aquí los datos de tu proyecto Firebase (Configuración del proyecto → Tus apps → Configuración de SDK).
 window.FB_CFG = {
-  apiKey: "PEGAR_API_KEY",
-  authDomain: "PEGAR.firebaseapp.com",
-  projectId: "PEGAR_PROJECT_ID",
-  storageBucket: "PEGAR.firebasestorage.app",
-  messagingSenderId: "PEGAR",
-  appId: "PEGAR"
+  apiKey: "AIzaSyCR0Yi2Q8_SLj4zg6wTey7uj3bIkh8Ojh4",
+  authDomain: "linea-amarillo---casos.firebaseapp.com",
+  projectId: "linea-amarillo---casos",
+  storageBucket: "linea-amarillo---casos.firebasestorage.app",
+  messagingSenderId: "424721521720",
+  appId: "1:424721521720:web:82001f93f26d42514edacd"
 };
-// Correo del administrador (el tuyo). Debe ser el mismo con el que creas tu usuario en Firebase.
+// Correo del administrador.
 window.ADMIN_EMAIL = "mperalta@finilager.bo";
