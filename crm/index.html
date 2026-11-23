@@ -14,7 +14,13 @@ h2{font:700 16px Space Grotesk,Inter,sans-serif;margin:14px 0 6px}
 .logo{display:inline-block;width:14px;height:14px;border-radius:4px;background:linear-gradient(90deg,var(--am) 50%,var(--ag) 50%);margin-right:6px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .tab{border:1px solid var(--bd);background:var(--pn);color:var(--fg);padding:8px 13px;border-radius:9px;cursor:pointer;font:600 13px inherit}
-.tab.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.tab{--tc:#475569;background:var(--tc);color:#fff;border:2px solid var(--tc);opacity:.88;box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.tab:hover{opacity:1}
+.tab[data-v=panel]{--tc:#2563eb}.tab[data-v=cli]{--tc:#15803d}.tab[data-v=vis]{--tc:#c2410c}.tab[data-v=opp]{--tc:#7c3aed}.tab[data-v=plan]{--tc:#0e7490}.tab[data-v=mant]{--tc:#be123c}.tab[data-v=rep]{--tc:#a21caf}.tab[data-v=adm]{--tc:#334155}
+.tab.on{background:var(--tc);color:#fff;border-color:var(--fg);opacity:1;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--tc),0 3px 8px rgba(0,0,0,.3);transform:translateY(-1px);font-weight:800}
+#q{background:#fff;color:#1d2417;border:2px solid #9aa58f}
+#q::placeholder{color:#7a8470}
+#q:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(46,107,58,.25)}
 .card{background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px;min-width:0}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
 .kpi{background:var(--pn);border:1px solid var(--bd);border-left:5px solid var(--ac);border-radius:10px;padding:8px 10px}
@@ -57,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-3</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-4</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
