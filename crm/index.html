@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-5</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-6</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -330,6 +330,11 @@ async function boot(){
  firebase.initializeApp(FB_CFG);auth=firebase.auth();fs=firebase.firestore();try{await fs.enablePersistence({synchronizeTabs:true})}catch(e){}
  $('#out').onclick=()=>auth.signOut();
  auth.onAuthStateChanged(u=>{u?entrar(u):showLogin()})}
+(function(){const bar=document.createElement('div');bar.id='net';bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:8px max(12px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));font:600 13px Inter,system-ui,sans-serif;text-align:center;display:none;color:#fff';document.body.appendChild(bar);let t;
+ const show=(m,bg,ms)=>{clearTimeout(t);bar.textContent=m;bar.style.background=bg;bar.style.display='block';if(ms)t=setTimeout(()=>{bar.style.display='none'},ms)};
+ const off=()=>show('Sin conexión · lo que registres se guardará en este equipo y se enviará al volver la señal','#b45309');
+ window.addEventListener('offline',off);window.addEventListener('online',()=>show('Conexión recuperada · sincronizando datos…','#15803d',4000));
+ if(!navigator.onLine)off()})();
 boot();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
