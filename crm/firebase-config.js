@@ -8,4 +8,4 @@ window.FB_CFG = {
   appId: "PEGAR"
 };
 // Correo del administrador (el tuyo). Debe ser el mismo con el que creas tu usuario en Firebase.
-window.ADMIN_EMAIL = "mtperaltacemo@gmail.com";
+window.ADMIN_EMAIL = "mperalta@finilager.bo";
