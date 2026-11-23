@@ -134,15 +134,17 @@ function bindRows(){document.querySelectorAll('tr.cl').forEach(r=>r.onclick=()=>
 function vCli(){
  const rgs=[...new Set(all().map(c=>c.rg))].sort();
  $('#app').innerHTML='<div class="row"><input id="q" placeholder="Buscar cliente, ID o NIT…" value="'+esc(F.q)+'" style="flex:1;min-width:180px"><select id="fs"><option value="">Todos los segmentos</option><option value="A">Línea Amarilla</option><option value="G">Agrícola</option></select><select id="fr"><option value="">Todas las regionales</option>'+rgs.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fv"><option value="">Todos los vendedores</option>'+VEND.map(v=>'<option value="'+v[0]+'">'+esc(v[1])+'</option>').join('')+'</select><select id="fe"><option value="">Todo estado</option>'+ESTADOS.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fm"><option value="">Toda prioridad</option><option value="sr">Alta</option><option value="sy">Media</option><option value="sg">Baja</option></select><select id="fo"><option value="score">Orden: prioridad</option><option value="v24">Orden: compras 24–26</option><option value="db">Orden: días sin comprar</option><option value="n">Orden: nombre</option></select><button id="nuevo">+ Prospecto</button></div><div id="lst"></div>';
- const set=(id,k)=>{const e=$(id);e.value=F[k];e.onchange=e.oninput=()=>{F[k]=e.value;list()}};set('#q','q');set('#fs','seg');set('#fr','rg');set('#fv','vid');set('#fe','est');set('#fm','sem');set('#fo','sort');
+ const set=(id,k)=>{const e=$(id);e.value=F[k];e.onchange=e.oninput=()=>{F[k]=e.value;LIM=150;list()}};set('#q','q');set('#fs','seg');set('#fr','rg');set('#fv','vid');set('#fe','est');set('#fm','sem');set('#fo','sort');
  $('#nuevo').onclick=()=>prospecto();
  list()}
+let LIM=150;
 function list(){
  let r=all().filter(c=>mine(c)||F.vid).map(c=>({c,x:score(c)}));
  const q=F.q.toLowerCase();
  r=r.filter(({c,x})=>(!q||(c.n+c.id+c.nit).toLowerCase().includes(q))&&(!F.seg||c.s.includes(F.seg))&&(!F.rg||c.rg===F.rg)&&(!F.vid||c.vid===F.vid)&&(!F.est||est(c)===F.est)&&(!F.sem||sem(x.s)[0]===F.sem));
  r.sort((a,b)=>F.sort==='n'?a.c.n.localeCompare(b.c.n):F.sort==='v24'?b.x.v24-a.x.v24:F.sort==='db'?(b.x.db??9999)-(a.x.db??9999):b.x.s-a.x.s);
- $('#lst').innerHTML='<div class="note" style="margin-bottom:4px">'+r.length+' clientes'+(r.length>150?' (se muestran 150)':'')+'</div>'+tblCli(r.slice(0,150));bindRows()}
+ $('#lst').innerHTML='<div class="note" style="margin-bottom:4px">'+r.length+' clientes'+(r.length>LIM?' (se muestran '+LIM+')':'')+'</div>'+tblCli(r.slice(0,LIM))+(r.length>LIM?'<div class="row" style="justify-content:center;margin:10px 0"><button id="mas">Ver 150 más</button><button id="todos" class="sec">Ver todos ('+r.length+')</button></div>':'');
+ const mb=$('#mas');if(mb)mb.onclick=()=>{LIM+=150;list()};const tb=$('#todos');if(tb)tb.onclick=()=>{LIM=r.length;list()};bindRows()}
 // ---------- ficha
 function ficha(id){const c=cli(id);if(!c)return;const s=ST[id]||{};const x=score(c);const t=vtot(c);
  const vis=Object.entries(VIS).filter(([k,v])=>v.cid===id).sort((a,b)=>b[1].fecha.localeCompare(a[1].fecha));
