@@ -276,14 +276,14 @@ function showLogin(msg){$('#out').hidden=true;$('#tabs').innerHTML='';$('#who').
  $('#l_ok').onclick=go;$('#l_p').onkeydown=e=>{if(e.key==='Enter')go()};
  $('#l_rs').onclick=async()=>{const m=$('#l_e').value.trim();if(!m){$('#l_m').textContent='Escribe tu correo primero.';return}try{await auth.sendPasswordResetEmail(m);$('#l_m').textContent='Te enviamos un correo para cambiar la clave.'}catch(e){$('#l_m').textContent='No se pudo enviar el correo.'}}}
 async function cargarDatos(){
- const snap=await fs.collection('seed').get();const o={};snap.docs.forEach(d=>o[d.id]=d.data().items||[]);
+ const snap=await fs.collection('seed').get();const o={};snap.docs.forEach(d=>{const x=d.data();o[d.id]=x.j?JSON.parse(x.j):(x.items||[])});
  CL=[];Object.keys(o).filter(k=>k.startsWith('clientes_')).sort((a,b)=>a.split('_')[1]-b.split('_')[1]).forEach(k=>CL=CL.concat(o[k]));
  VEND=o.vendedores||[];MAT=o.materiales||[];return CL.length>0}
 async function vAdm(){
  const pf=(await fs.collection('config').doc('perfiles').get()).data()||{map:{}};const map=pf.map||{};
  $('#app').innerHTML='<h2 style="margin-top:0">Administración</h2><div class="card"><b>1. Base de clientes</b><div class="note">Clientes cargados: <b>'+CL.length+'</b>. Para cargar o actualizar la base, elige el archivo <code>crm_seed.json</code>.</div><div class="row"><input type="file" id="sd" accept=".json"><button id="sdb">Cargar base</button></div><div id="sdm" class="note"></div></div>'
  +'<div class="card" style="margin-top:10px"><b>2. Perfiles de vendedores</b><div class="note">Primero crea el usuario (correo y clave) en Firebase → Authentication. Luego asigna aquí su perfil.</div><div class="tw"><table><thead><tr><th>Correo</th><th>Perfil</th><th></th></tr></thead><tbody id="pr">'+Object.entries(map).map(([e,p])=>'<tr><td>'+esc(e)+'</td><td>'+esc(PERF_LABEL[p]||p)+'</td><td><button class="d sm" data-x="'+esc(e)+'">Quitar</button></td></tr>').join('')+'</tbody></table></div><div class="row"><input id="pe" type="email" placeholder="correo del vendedor" style="flex:1;min-width:200px"><select id="pp"><option value="A">Solo Línea Amarilla</option><option value="G">Solo Agrícola</option><option value="all">Todo</option></select><button id="pa">Agregar</button></div></div>';
- $('#sdb').onclick=async()=>{const f=$('#sd').files[0];if(!f)return;try{const d=JSON.parse(await f.text());$('#sdm').textContent='Cargando…';const w=async(id,items)=>fs.collection('seed').doc(id).set({items});
+ $('#sdb').onclick=async()=>{const f=$('#sd').files[0];if(!f)return;try{const d=JSON.parse(await f.text());$('#sdm').textContent='Cargando…';const w=async(id,items)=>fs.collection('seed').doc(id).set({j:JSON.stringify(items)});
   for(let i=0;i<d.clientes.length;i+=100)await w('clientes_'+(i/100),d.clientes.slice(i,i+100));await w('vendedores',d.vendedores);await w('materiales',d.materiales);await cargarDatos();$('#sdm').textContent='Listo: '+CL.length+' clientes cargados.'}catch(e){$('#sdm').textContent='Error: '+(e.message||e)}};
  const sv=async m=>{await fs.collection('config').doc('perfiles').set({map:m});vAdm()};
  $('#pa').onclick=()=>{const e=$('#pe').value.trim().toLowerCase();if(!e)return;map[e]=$('#pp').value;sv(map)};
