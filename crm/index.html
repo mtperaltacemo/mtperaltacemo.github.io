@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-4</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-5</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -81,7 +81,7 @@ const nf=x=>Number(x||0).toLocaleString('en-US',{maximumFractionDigits:0});
 const today=()=>new Date().toISOString().slice(0,10);
 const days=d=>d?Math.floor((Date.now()-new Date(d+'T12:00:00').getTime())/864e5):null;
 const addDays=(n)=>new Date(Date.now()+n*864e5).toISOString().slice(0,10);
-let DB=null,UID='local',UOWNER=false,CL=[],VEND=[],ST={},VIS={},OPP={},EQ={},MAT=[],USERS={},ME=null,view='panel',F={seg:'',rg:'',vid:'',est:'',sem:'',q:'',sort:'score'};
+let DB=null,UID='local',UOWNER=false,CL=[],VEND=[],ST={},VIS={},OPP={},EQ={},MAT=[],HIST={},USERS={},ME=null,view='panel',F={seg:'',rg:'',vid:'',est:'',sem:'',q:'',sort:'score'};
 const mem={cli:{},vis:{},opp:{},users:{}};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 // ---------- persistencia
@@ -159,10 +159,15 @@ function ficha(id){const c=cli(id);if(!c)return;const s=ST[id]||{};const x=score
  ov.innerHTML='<div class="md"><div class="row" style="justify-content:space-between"><div><h1>'+esc(c.n)+'</h1><span class="mu">'+esc(c.id)+(c.nit?' · NIT '+esc(c.nit):'')+' · '+esc(c.rg)+' · '+esc(c.vend)+'</span><br>'+segChips(c.s)+'</div><button class="g" id="x">Cerrar</button></div>'
  +'<div class="kpis" style="margin-top:8px"><div class="kpi"><b>Prioridad</b><span>'+sem(x.s)[1]+' '+x.s+'</span></div><div class="kpi am"><b>Última compra</b><span style="font-size:15px">'+(lastBuy(c)||'—')+(x.db!=null?' ('+x.db+' d)':'')+'</span></div><div class="kpi"><b>Última visita</b><span style="font-size:15px">'+(lastVisit(id)||'Nunca')+'</span></div><div class="kpi"><b>Compras 2021–26 Bs</b><span>'+nf(t.reduce((a,b)=>a+b,0))+'</span></div></div>'
  +'<div class="grid2"><div class="card"><b>Compras por año (Bs)</b>'+bars(t,[2021,2022,2023,2024,2025,2026])+'<div class="note">Amarilla: '+c.va.map(nf).join(' · ')+'<br>Agrícola: '+c.vg.map(nf).join(' · ')+'</div></div><div class="card"><b>Productos que más compra</b>'+(c.top.length?'<table>'+c.top.map(p=>'<tr><td>'+esc(p[1])+'</td><td class="n">Bs '+nf(p[2])+'<br><span class="mu">'+nf(p[3])+' u</span></td></tr>').join('')+'</table>':'<span class="mu">Sin compras registradas</span>')+'<div class="note">Marcas: '+esc(c.mk.join(', '))+'</div></div></div>'
+ +'<h2>Historial de compras</h2><div class="card" id="hc"></div>'
  +'<h2>Gestión</h2><div class="fl"><label>Estado<select id="f_est">'+ESTADOS.map(e=>'<option'+(est(c)===e?' selected':'')+'>'+e+'</option>').join('')+'</select></label><label>Dirección / ubicación<input id="f_dir" value="'+esc(s.dir||'')+'" placeholder="Calle, zona, ciudad, finca…"></label><label>Enlace de Google Maps<input id="f_map" value="'+esc(s.mapa||'')+'" placeholder="Pega el enlace de ubicación"></label><label>Responsable (vendedor)<select id="f_resp">'+VEND.map(v=>'<option value="'+v[0]+'"'+(c.vid===v[0]?' selected':'')+'>'+esc(v[1])+'</option>').join('')+(VEND.some(v=>v[0]===c.vid)?'':'<option value="" selected>'+esc(c.vend||'Sin asignar')+'</option>')+'</select></label><div class="w" id="cts"></div><label class="w">Resumen de equipos / cultivos (texto libre)<textarea id="f_eq" placeholder="Ej.: Excavadora CAT 320, 2 tractores John Deere; soya y maíz, 300 ha">'+esc(s.equipos||'')+'</textarea></label><label class="w">Notas<textarea id="f_nt">'+esc(s.notas||'')+'</textarea></label></div>'
  +'<div class="row"><button id="sv">Guardar ficha</button>'+((s.mapa||s.dir)?'<a href="'+esc(s.mapa||('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.dir)))+'" target="_blank" rel="noopener"><button class="g">Abrir en mapas</button></a>':'')+'<button id="nv" class="g">+ Registrar visita</button><button id="no" class="g">+ Oportunidad</button></div>'
  +eqSection(id)+'<h2>Oportunidades</h2>'+(ops.length?ops.map(([k,o])=>'<div class="op" data-o="'+k+'"><b>'+esc(o.titulo)+'</b> <span class="chip sy">'+o.etapa+'</span> Bs '+nf(o.monto)+'</div>').join(''):'<span class="mu">Sin oportunidades</span>')
  +'<h2>Historial de visitas</h2>'+(vis.length?vis.map(([k,v])=>'<div class="tl"><b>'+v.fecha+'</b> · '+esc(v.tipo||'')+(v.estado==='plan'?' <span class="chip sy">Planificada</span>':' · '+esc(v.res||''))+' <span class="mu">— '+esc(v.vendName||'')+'</span><br>'+esc(v.obs||'')+(v.prox?'<br><span class="mu">Próximo: '+esc(v.proxAccion||'')+' — '+v.prox+(v.proxHecha?' ✔':'')+'</span>':'')+(v.ubic?'<br><span class="mu">📍 '+esc(v.ubic)+'</span>':'')+(v.foto?'<img src="'+v.foto+'">':'')+'<br><button class="g sm" data-e="'+k+'">Editar</button></div>').join(''):'<span class="mu">Sin visitas registradas</span>')+'</div>';
+ const hcDraw=all=>{const h=HIST[id]||[];const n=all?h.length:Math.min(h.length,15);
+  $('#hc').innerHTML=h.length?'<div class="note">Compras de Línea Amarilla y Agrícolas, de la más reciente a la más antigua. Los valores negativos son devoluciones o notas de crédito.</div><div class="tw"><table><thead><tr><th>Fecha</th><th>Código</th><th>Descripción</th><th class="n">Cant.</th><th class="n">Valor Bs</th></tr></thead><tbody>'+h.slice(0,n).map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="n">'+nf(r[3])+'</td><td class="n"'+(r[4]<0?' style="color:#dc2626"':'')+'>'+nf(r[4])+'</td></tr>').join('')+'</tbody></table></div>'+(h.length>n?'<div class="row"><button class="g sm" id="hcm">Ver todas ('+h.length+' compras)</button></div>':''):'<span class="mu">Sin compras registradas de Línea Amarilla o Agrícolas.</span>';
+  const mb=$('#hcm');if(mb)mb.onclick=()=>hcDraw(true)};
+ hcDraw(false);
  $('#x').onclick=()=>{ov.hidden=true};
  let CT=(s.contactos&&s.contactos.length)?s.contactos.map(x=>({...x})):[];
  if(!CT.length){if(s.contacto||s.tel||s.mail)CT.push({n:s.contacto||'',cargo:'',tel:s.tel||'',mail:s.mail||''});if(s.gerente)CT.push({n:s.gerente,cargo:'Gerente',tel:'',mail:''});if(s.propietario)CT.push({n:s.propietario,cargo:'Propietario',tel:'',mail:''})}
@@ -296,7 +301,7 @@ function showLogin(msg){$('#out').hidden=true;$('#tabs').innerHTML='';$('#who').
 async function cargarDatos(){
  const snap=await fs.collection('seed').get();const o={};snap.docs.forEach(d=>{const x=d.data();o[d.id]=x.j?JSON.parse(x.j):(x.items||[])});
  CL=[];Object.keys(o).filter(k=>k.startsWith('clientes_')).sort((a,b)=>a.split('_')[1]-b.split('_')[1]).forEach(k=>CL=CL.concat(o[k]));
- VEND=o.vendedores||[];MAT=o.materiales||[];return CL.length>0}
+ VEND=o.vendedores||[];MAT=o.materiales||[];HIST=(o.historial&&!Array.isArray(o.historial))?o.historial:{};return CL.length>0}
 async function vAdm(){
  const pf=(await fs.collection('config').doc('perfiles').get()).data()||{map:{}};const map=pf.map||{};
  $('#app').innerHTML='<h2 style="margin-top:0">Administración</h2><div class="card"><b>1. Base de clientes</b><div class="note">Clientes cargados: <b>'+CL.length+'</b>. Para cargar o actualizar la base, elige el archivo <code>crm_seed.json</code>.</div><div class="row"><input type="file" id="sd" accept=".json"><button id="sdb">Cargar base</button></div><div id="sdm" class="note"></div></div>'
@@ -304,7 +309,7 @@ async function vAdm(){
  $('#app').insertAdjacentHTML('beforeend','<div class="card" style="margin-top:10px"><b>3. Respaldo</b><div class="note">Descarga una copia de todas las visitas, oportunidades, equipos y datos de clientes registrados. Se recomienda hacerlo una vez al mes y guardarlo en un lugar seguro.</div><div class="row"><button id="bk">Descargar respaldo</button></div><div id="bkm" class="note"></div></div>');
  $('#bk').onclick=async()=>{const m=$('#bkm');try{m.textContent='Preparando…';const o={fecha:new Date().toISOString(),version:1},n={};for(const c of ['cli','vis','opp','eq']){const sn=await fs.collection('crm_'+c).get();o[c]={};n[c]=sn.size;sn.docs.forEach(d=>o[c][d.id]=d.data())}const f='crm_respaldo_'+o.fecha.slice(0,10)+'.json';const b=new Blob([JSON.stringify(o)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;document.body.appendChild(a);a.click();a.remove();m.textContent='Listo: '+f+' ('+n.vis+' visitas, '+n.opp+' oportunidades, '+n.eq+' equipos, '+n.cli+' fichas de cliente). Revisa tu carpeta Descargas.'}catch(e){m.textContent='Error: '+(e.message||e)}};
  $('#sdb').onclick=async()=>{const f=$('#sd').files[0];if(!f)return;try{const d=JSON.parse(await f.text());$('#sdm').textContent='Cargando…';const w=async(id,items)=>fs.collection('seed').doc(id).set({j:JSON.stringify(items)});
-  for(let i=0;i<d.clientes.length;i+=100)await w('clientes_'+(i/100),d.clientes.slice(i,i+100));await w('vendedores',d.vendedores);await w('materiales',d.materiales);await cargarDatos();$('#sdm').textContent='Listo: '+CL.length+' clientes cargados.'}catch(e){$('#sdm').textContent='Error: '+(e.message||e)}};
+  for(let i=0;i<d.clientes.length;i+=100)await w('clientes_'+(i/100),d.clientes.slice(i,i+100));await w('vendedores',d.vendedores);await w('materiales',d.materiales);if(d.historial)await w('historial',d.historial);await cargarDatos();$('#sdm').textContent='Listo: '+CL.length+' clientes cargados.'}catch(e){$('#sdm').textContent='Error: '+(e.message||e)}};
  const sv=async m=>{await fs.collection('config').doc('perfiles').set({map:m});vAdm()};
  $('#pa').onclick=()=>{const e=$('#pe').value.trim().toLowerCase();if(!e)return;map[e]=$('#pp').value;sv(map)};
  document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{delete map[b.dataset.x];sv(map)})}
