@@ -1,7 +1,7 @@
 {
  "name": "Centro Mayorista",
  "short_name": "Centro Mayorista",
- "id": "./",
+ "id": "/crm2/",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
