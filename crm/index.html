@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-1</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-3</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -88,14 +88,14 @@ const RGS=['ORIENTE','OCCIDENTE','CENTRO','OTRO'];
 const ivtOf=c=>{const s=ST[c.id];return(s&&s.ivt)||''};
 const isAdmAny=()=>(EQP[USEREMAIL]||{}).rol==='admin';
 const isAdmRg=c=>{if(UOWNER)return true;const u=EQP[USEREMAIL];return !!u&&u.rol==='admin'&&u.rg===c.rg};
-const canSee=c=>{if(UOWNER)return true;if(!LOADED.cli)return false;const a=ivtOf(c);return !a||a===USEREMAIL||isAdmRg(c)};
+const canSee=c=>{if(UOWNER)return true;if(!LOADED.cli)return false;const u=EQP[USEREMAIL];if(!u||!u.rg||u.rg!==c.rg)return false;const a=ivtOf(c);return !a||a===USEREMAIL||isAdmRg(c)};
 const myName=()=>((EQP[USEREMAIL]||{}).n)||USEREMAIL;
 const ivtList=rg=>Object.entries(EQP).filter(([e,u])=>u.rol!=='admin'&&(!rg||!u.rg||u.rg===rg)).map(([e,u])=>[e,u.n||e,u.rg||'']);
 const NEWIVT=()=>UOWNER||isAdmAny()?{}:{ivt:USEREMAIL,ivtName:myName()};
 const ivtCell=c=>{const s=ST[c.id];const a=s&&s.ivt;return a?'<span class="chip" style="background:#1d4ed8;color:#fff">'+esc(s.ivtName||a)+'</span>':'<span class="mu">Sin asignar</span>'};
 const ivtF=c=>{if(!F.ivt)return true;const a=ivtOf(c);if(F.ivt==='_none')return !a;if(F.ivt==='_me')return a===USEREMAIL;return a===F.ivt};
 const ivtOpts=()=>'<option value="_none">Sin IVT asignado</option>'+(UOWNER?'':'<option value="_me">Mis cuentas</option>')+((UOWNER||isAdmAny())?ivtList().map(i=>'<option value="'+esc(i[0])+'">'+esc(i[1])+'</option>').join(''):'');
-function ivtBox(c){const s=ST[c.id]||{},a=s.ivt||'',adm=isAdmRg(c);let h='<div class="w card" style="background:var(--pn2)"><b>IVT asignado:</b> '+(a?esc(s.ivtName||a):'<span class="mu">Sin asignar (cualquier IVT puede tomarla)</span>');
+function ivtBox(c){const s=ST[c.id]||{},a=s.ivt||'',adm=isAdmRg(c);let h='<div class="w card" style="background:var(--pn2);grid-column:1/-1"><b>IVT asignado:</b> '+(a?esc(s.ivtName||a):'<span class="mu">Sin asignar (cualquier IVT puede tomarla)</span>');
  if(adm){const L=ivtList(UOWNER?'':c.rg);h+='<div class="row"><select id="f_ivt"><option value="">Sin asignar</option>'+L.map(i=>'<option value="'+esc(i[0])+'"'+(i[0]===a?' selected':'')+'>'+esc(i[1])+(i[2]?' · '+i[2]:'')+'</option>').join('')+(a&&!L.some(i=>i[0]===a)?'<option value="'+esc(a)+'" selected>'+esc(s.ivtName||a)+'</option>':'')+'</select><button type="button" class="g" id="ivt_ok">Guardar IVT asignado</button></div><div class="note">Solo el IVT asignado y los administradores ven esta cuenta.</div>'}
  else if(!a)h+='<div class="row"><button type="button" id="ivt_tom">Tomar esta cuenta</button></div><div class="note">Al tomarla, solo tú y los administradores la verán.</div>';
  else h+=' <span class="note">(es tu cuenta; para liberarla o reasignarla pide al administrador)</span>';
@@ -105,9 +105,14 @@ function ivtBind(c){const id=c.id,b1=$('#ivt_ok'),b2=$('#ivt_tom');
  if(b2)b2.onclick=async()=>{try{const ref=fs.collection('crm_cli').doc(id);const res=await fs.runTransaction(async t=>{const d=await t.get(ref);const cur=d.exists?d.data():{};if(cur.ivt&&cur.ivt!==USEREMAIL)return false;t.set(ref,{...cur,ivt:USEREMAIL,ivtName:myName()});return true});
   if(res){ST[id]={...(ST[id]||{}),ivt:USEREMAIL,ivtName:myName()};$('#ov').hidden=true;render()}else{warn('Otro IVT ya tomó esta cuenta.');$('#ov').hidden=true}}catch(e){warn('No se pudo tomar la cuenta: '+(e.message||e.code))}}}
 function eqpCard(map,sv){
- const rows=Object.entries(EQP).map(([e,u])=>'<tr><td>'+esc(e)+'</td><td>'+esc(u.n||'')+'</td><td>'+esc(u.rg||'—')+'</td><td>'+(u.rol==='admin'?'Administrador regional':'IVT')+'</td><td><button class="d sm" data-qx="'+esc(e)+'">Quitar</button></td></tr>').join('');
- $('#app').insertAdjacentHTML('beforeend','<div class="card" style="margin-top:10px"><b>4. IVTs y administradores por regional</b><div class="note">IVT: ve sus cuentas asignadas y las cuentas sin asignar. Administrador regional: además ve y asigna las cuentas de su regional. Tú (administrador general) ves todo. Al agregar un correo nuevo se le da acceso con perfil "Todo"; antes crea su usuario en Firebase → Authentication.</div><div class="tw"><table><thead><tr><th>Correo</th><th>Nombre</th><th>Regional</th><th>Rol</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="row"><input id="qe" type="email" placeholder="correo" style="flex:1;min-width:180px"><input id="qn" placeholder="nombre (como se mostrará)" style="flex:1;min-width:160px"><select id="qr">'+RGS.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="qo"><option value="ivt">IVT</option><option value="admin">Administrador regional</option></select><button id="qa">Agregar / actualizar</button></div></div>');
- $('#qa').onclick=()=>{const e=$('#qe').value.trim().toLowerCase();if(!e)return;EQP[e]={n:$('#qn').value.trim(),rg:$('#qr').value,rol:$('#qo').value};if(!map[e])map[e]='all';sv(map)};
+ const rows=Object.entries(EQP).map(([e,u])=>'<tr><td>'+esc(e)+'</td><td>'+esc(u.n||'')+'</td><td>'+esc(u.rg||'—')+'</td><td>'+(u.rol==='admin'?'Administrador regional':'IVT')+'</td><td><button class="g sm" data-qr="'+esc(e)+'">Enviar correo de clave</button> <button class="d sm" data-qx="'+esc(e)+'">Quitar</button></td></tr>').join('');
+ $('#app').insertAdjacentHTML('beforeend','<div class="card" style="margin-top:10px"><b>4. IVTs y administradores por regional</b><div class="note">IVT: ve sus cuentas asignadas y las cuentas sin asignar. Administrador regional: además ve y asigna las cuentas de su regional. Tú (administrador general) ves todo. Cada persona solo ve los clientes de su regional. Para un usuario nuevo escribe una clave temporal y se crea su acceso; si el usuario ya existe, deja la clave vacía.</div><div class="tw"><table><thead><tr><th>Correo</th><th>Nombre</th><th>Regional</th><th>Rol</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="fl" style="margin-top:8px;align-items:end"><label>Correo<input id="qe" type="email" placeholder="correo@empresa.com"></label><label>Nombre<input id="qn" placeholder="Como se mostrará"></label><label>Regional<select id="qr">'+RGS.map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>Rol<select id="qo"><option value="ivt">IVT</option><option value="admin">Administrador regional</option></select></label><label>Clave temporal (solo usuario nuevo)<input id="qp" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label><button id="qa">Agregar / actualizar</button></div><div id="qm" class="note"></div></div>');
+ $('#qa').onclick=async()=>{const e=$('#qe').value.trim().toLowerCase(),pw=$('#qp').value,m=$('#qm');if(!e)return;
+  if(pw){if(pw.length<6){m.textContent='La clave debe tener al menos 6 caracteres.';return}
+   try{m.textContent='Creando usuario…';const a2=firebase.initializeApp(FB_CFG,'sec'+Date.now());try{await a2.auth().createUserWithEmailAndPassword(e,pw);await a2.auth().signOut()}finally{await a2.delete()}}
+   catch(er){if(er.code!=='auth/email-already-in-use'){m.textContent='No se pudo crear el usuario: '+(er.message||er.code);return}}}
+  EQP[e]={n:$('#qn').value.trim(),rg:$('#qr').value,rol:$('#qo').value};if(!map[e])map[e]='all';sv(map)};
+ document.querySelectorAll('[data-qr]').forEach(b=>b.onclick=async()=>{try{await auth.sendPasswordResetEmail(b.dataset.qr);warn('Se envió a '+b.dataset.qr+' un correo para crear o restablecer su clave.')}catch(er){warn('No se pudo enviar el correo: '+(er.message||er.code))}});
  document.querySelectorAll('[data-qx]').forEach(b=>b.onclick=()=>{delete EQP[b.dataset.qx];sv(map)})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 // ---------- persistencia
@@ -209,7 +214,7 @@ function ficha(id){const c=cli(id);if(!c)return;const s=ST[id]||{};const x=score
  $('#nv').onclick=()=>formVisita(id);$('#no').onclick=()=>formOpp(id);ivtBind(c);
  ov.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>formVisita(id,b.dataset.e));
  ov.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>formOpp(id,b.dataset.o));const ne=$('#neq');if(ne)ne.onclick=()=>formEquipo(id);ov.querySelectorAll('[data-eq]').forEach(b=>b.onclick=()=>eqView(b.dataset.eq))}
-function prospecto(){const ov=$('#ov');ov.hidden=false;ov.innerHTML='<div class="md"><h1>Nuevo prospecto</h1><div class="fl"><label class="w">Nombre / razón social<input id="p_n"></label><label>Segmento<select id="p_s"><option value="A">Línea Amarilla</option><option value="G">Agrícola</option><option value="AG">Ambos</option></select></label><label>Regional<select id="p_r"><option>ORIENTE</option><option>OCCIDENTE</option><option>CENTRO</option><option>OTRO</option></select></label><label>NIT<input id="p_nit"></label></div><div class="row"><button id="ok">Crear</button><button class="g" id="x">Cancelar</button></div></div>';
+function prospecto(){const ov=$('#ov');ov.hidden=false;ov.innerHTML='<div class="md"><h1>Nuevo prospecto</h1><div class="fl"><label class="w">Nombre / razón social<input id="p_n"></label><label>Segmento<select id="p_s"><option value="A">Línea Amarilla</option><option value="G">Agrícola</option><option value="AG">Ambos</option></select></label><label>Regional<select id="p_r">'+RGS.filter(r=>UOWNER||r===(EQP[USEREMAIL]||{}).rg).map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>NIT<input id="p_nit"></label></div><div class="row"><button id="ok">Crear</button><button class="g" id="x">Cancelar</button></div></div>';
  $('#x').onclick=()=>{ov.hidden=true};$('#ok').onclick=()=>{const n=$('#p_n').value.trim();if(!n)return;const id='P'+Date.now().toString(36);const v=VEND.find(v=>v[0]===ME);put('cli',id,{manual:true,n,seg:$('#p_s').value,rg:$('#p_r').value,nit:$('#p_nit').value,vid:v?v[0]:'',vendName:v?v[1]:'',estado:'Prospecto',...NEWIVT()});ov.hidden=true;ficha(id)}}
 // ---------- visita
 function pickCli(sel){return '<label class="w">Cliente<input id="v_q" list="dl" value="'+(sel?esc(cli(sel).n+' ['+sel+']'):'')+'" placeholder="Escribe para buscar…"><datalist id="dl">'+all().filter(mine).slice(0,800).map(c=>'<option value="'+esc(c.n+' ['+c.id+']')+'">').join('')+'</datalist></label>'}
@@ -345,6 +350,7 @@ async function entrar(u){
  try{const d=await fs.collection('config').doc('perfiles').get();const dd=d.data()||{};EQP=dd.equipo||{};perfil=(dd.map||{})[USEREMAIL]}catch(e){}
  if(!UOWNER){
   if(!perfil){$('#tabs').innerHTML='';$('#app').innerHTML='<div class="warn">Tu usuario aún no tiene un perfil asignado. Pide al administrador que lo asigne.</div>';return}}
+ if(!UOWNER&&!((EQP[USEREMAIL]||{}).rg)){$('#tabs').innerHTML='';$('#app').innerHTML='<div class="warn">Tu usuario aún no tiene una regional asignada. Pide al administrador general que te la asigne.</div>';return}
  let ok=false;try{ok=await cargarDatos()}catch(e){warn('No se pudieron leer los datos: '+(e.message||e.code))}
  DB={collection:n=>fs.collection(n)};
  if(UOWNER){if(!TABS.some(t=>t[0]==='adm'))TABS.push(['adm','Administración']);ME=ls('crm_me')||'all'}
