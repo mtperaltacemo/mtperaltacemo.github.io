@@ -62,8 +62,19 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .tl img{max-width:160px;border-radius:8px;margin-top:4px;display:block}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
+.cc{margin-bottom:14px}.cc-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:2px 0 8px}.cc-h h2{margin:0}
+.cc-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.cc-k div{border-radius:10px;padding:8px 12px;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}.cc-k b{display:block;font-size:11px;font-weight:600;opacity:.92}.cc-k span{font-size:22px;font-weight:700}.cc-k small{font-size:11px;opacity:.9;font-weight:400}
+.k1{background:linear-gradient(135deg,#1e88e5,#1565c0)}.k2{background:linear-gradient(135deg,#f9a825,#ef6c00)}.k3{background:linear-gradient(135deg,#43a047,#2e7d32)}.k4{background:linear-gradient(135deg,#26a69a,#00796b)}.k5{background:linear-gradient(135deg,#e53935,#b71c1c)}.k6{background:linear-gradient(135deg,#8e24aa,#6a1b9a)}.k7{background:linear-gradient(135deg,#ec407a,#ad1457)}
+.cc-s{background:#fff;border-radius:12px;border:1px solid #e3dccb;border-top:5px solid var(--c);padding:10px 12px;margin-bottom:10px;overflow:auto}
+.cc-s h3{margin:0 0 6px;color:var(--c);font-size:15px}.cc-s h3 small{font-weight:400;color:#7a7a7a}
+.cc-s table{width:100%;border-collapse:collapse}.cc-s th{background:var(--cb);color:var(--c);padding:6px 8px;text-align:left;font-size:12px;white-space:nowrap}.cc-s th.n,.cc-s td.n{text-align:right}.cc-s td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}.cc-s tr.cl{cursor:pointer}.cc-s tr.cl:hover td{background:var(--cb)}
+.s-reg{--c:#1565c0;--cb:#e3f0fd}.s-vnd{--c:#00796b;--cb:#e0f3f0}.s-hot{--c:#c62828;--cb:#fde8e8}.s-lost{--c:#e65100;--cb:#fff0e0}.s-late{--c:#6a1b9a;--cb:#f1e4f7}
+.cc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.pc{padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px;white-space:nowrap}.pg{background:#d7f0dc;color:#1b5e20}.pa{background:#fff0c2;color:#7a5200}.pr{background:#fbd5d5;color:#9b1c1c}.pz{background:#eceff1;color:#546e7a}
+.rgc{color:#fff;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700;white-space:nowrap}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>Centro Mayorista <small style="font-weight:400;opacity:.6;font-size:11px">c20-30 v26nov-5</small></h1><small id="who"></small><button class="g sm" id="inst">⬇ Instalar app</button><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>Centro Mayorista <small style="font-weight:400;opacity:.6;font-size:11px">c20-30 v26nov-6</small></h1><small id="who"></small><button class="g sm" id="inst">⬇ Instalar app</button><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -155,6 +166,8 @@ function render(){
 function bars(vals,labs){const mx=Math.max(...vals,1);return '<div class="bars">'+vals.map((v,i)=>'<div style="height:'+Math.max(2,v/mx*100)+'%"><i>'+(v>=1000?nf(v/1000)+'k':nf(v))+'</i><u>'+labs[i]+'</u></div>').join('')+'</div>'}
 function segHTML(){
  const cs=all(),T=today(),m0=T.slice(0,7),dp=new Date(T+'T12:00:00');dp.setMonth(dp.getMonth()-1);const mp=dp.toISOString().slice(0,7);
+ const RC={ORIENTE:'#2e7d32',OCCIDENTE:'#1565c0',CENTRO:'#6a1b9a',CDD:'#ef6c00',OTRO:'#607d8b'};
+ const rgc=r=>'<span class="rgc" style="background:'+(RC[r]||'#607d8b')+'">'+esc(r)+'</span>';
  const cm={};cs.forEach(c=>{cm[c.id]=c});
  const G={},R={};
  const nmOf=c=>{const s=ST[c.id];return (s&&s.ivtName)||ivtOf(c)||'Sin asignar'};
@@ -168,22 +181,29 @@ function segHTML(){
  Object.values(OPP).forEach(o=>{const c=cm[o.cid];if(!c||!mr(o))return;const g=mkG(c),r=mkR(c);
   if(!['Ganada','Perdida'].includes(o.etapa)){g.oa++;g.ob+=+o.monto||0;r.oa++;r.ob+=+o.monto||0}
   else if(o.etapa==='Ganada'&&(o.cierre||'').slice(0,7)===m0)r.gan+=+o.monto||0});
- const pc=(a,b)=>b?Math.round(100*a/b)+'%':'—';
- const rowsG=Object.values(G).sort((a,b)=>a.rg.localeCompare(b.rg)||b.n-a.n).map(g=>'<tr><td>'+esc(g.nm)+(g.nm==='Sin asignar'?' <span class="mu">(libres)</span>':'')+'</td><td>'+esc(g.rg)+'</td><td class="n">'+g.n+'</td><td class="n">'+g.vm+'</td><td class="n">'+g.v30.size+' · '+pc(g.v30.size,g.n)+'</td><td class="n">'+g.nunca+'</td><td class="n">'+(g.acc?'<b style="color:#b3261e">'+g.acc+'</b>':0)+'</td><td class="n">'+g.oa+' · Bs '+nf(g.ob)+'</td></tr>').join('');
- const rowsR=Object.values(R).sort((a,b)=>b.n-a.n).map(r=>'<tr><td><b>'+esc(r.rg)+'</b></td><td class="n">'+r.n+'</td><td class="n">'+r.sinv+'</td><td class="n">'+r.vm+' <span class="mu">(ant. '+r.vp+')</span></td><td class="n">'+r.v30.size+' · '+pc(r.v30.size,r.n)+'</td><td class="n">'+r.nunca+'</td><td class="n">'+(r.acc?'<b style="color:#b3261e">'+r.acc+'</b>':0)+'</td><td class="n">'+r.oa+' · Bs '+nf(r.ob)+'</td><td class="n">Bs '+nf(r.gan)+'</td></tr>').join('');
+ const tot={n:0,sinv:0,vm:0,vp:0,v30:0,nunca:0,acc:0,oa:0,ob:0,gan:0};Object.values(R).forEach(r=>{tot.n+=r.n;tot.sinv+=r.sinv;tot.vm+=r.vm;tot.vp+=r.vp;tot.v30+=r.v30.size;tot.nunca+=r.nunca;tot.acc+=r.acc;tot.oa+=r.oa;tot.ob+=r.ob;tot.gan+=r.gan});
+ const pn=(a,b)=>b?Math.round(100*a/b):null;
+ const pill=(a,b)=>{const p=pn(a,b);return '<span class="pc '+(p===null?'pz':p>=50?'pg':p>=20?'pa':'pr')+'">'+a+' · '+(p===null?'—':p+'%')+'</span>'};
+ const accC=n=>n?'<span class="pc pr">'+n+'</span>':'<span class="pc pz">0</span>';
+ const nunC=(n,t)=>n&&t&&n===t?'<span class="pc pr">'+n+'</span>':n?'<span class="pc pa">'+n+'</span>':'<span class="pc pg">0</span>';
+ const rowsG=Object.values(G).sort((a,b)=>a.rg.localeCompare(b.rg)||b.n-a.n).map(g=>'<tr><td><b>'+esc(g.nm)+'</b>'+(g.nm==='Sin asignar'?' <span class="mu">(libres)</span>':'')+'</td><td>'+rgc(g.rg)+'</td><td class="n">'+g.n+'</td><td class="n">'+g.vm+'</td><td class="n">'+pill(g.v30.size,g.n)+'</td><td class="n">'+nunC(g.nunca,g.n)+'</td><td class="n">'+accC(g.acc)+'</td><td class="n">'+g.oa+' · Bs '+nf(g.ob)+'</td></tr>').join('');
+ const rowsR=Object.values(R).sort((a,b)=>b.n-a.n).map(r=>'<tr><td>'+rgc(r.rg)+'</td><td class="n">'+r.n+'</td><td class="n">'+r.sinv+'</td><td class="n">'+r.vm+' <span class="mu">(ant. '+r.vp+')</span></td><td class="n">'+pill(r.v30.size,r.n)+'</td><td class="n">'+nunC(r.nunca,r.n)+'</td><td class="n">'+accC(r.acc)+'</td><td class="n">'+r.oa+' · Bs '+nf(r.ob)+'</td><td class="n">Bs '+nf(r.gan)+'</td></tr>').join('');
  const hot=sc.filter(o=>o.x.s>=60&&(!o.lv||days(o.lv)>60)).sort((a,b)=>b.x.s-a.x.s).slice(0,10);
  const lost=sc.filter(o=>o.x.db!==null&&o.x.db>180&&o.x.v24>0).sort((a,b)=>b.x.v24-a.x.v24).slice(0,10);
  const lostN=sc.filter(o=>o.x.db!==null&&o.x.db>180).length;
  const late=Object.values(VIS).filter(v=>v.prox&&!v.proxHecha&&v.prox<T&&cm[v.cid]&&mr(v)).sort((a,b)=>a.prox.localeCompare(b.prox)).slice(0,10);
- const cr=o=>'<tr class="cl" data-id="'+esc(o.c.id)+'"><td><b>'+esc(o.c.n)+'</b><br><span class="mu">'+esc(o.c.rg)+' · '+esc(nmOf(o.c))+'</span></td>';
+ const cr=o=>'<tr class="cl" data-id="'+esc(o.c.id)+'"><td><b>'+esc(o.c.n)+'</b><br>'+rgc(o.c.rg)+' <span class="mu">'+esc(nmOf(o.c))+'</span></td>';
  const sub=UOWNER?'Todas las regionales':'Regional '+esc((EQP[USEREMAIL]||{}).rg||'');
  const th=(a,k)=>'<thead><tr>'+a.map((x,i)=>'<th'+(i>=k?' class="n"':'')+'>'+x+'</th>').join('')+'</tr></thead>';
- return '<div class="card" style="margin-bottom:12px"><h2 style="margin-top:0">Seguimiento del equipo <small class="mu" style="font-weight:400">· '+sub+'</small></h2>'
- +(UOWNER?'<div style="overflow:auto"><table class="tb">'+th(['Regional','Clientes','Sin VND','Visitas mes','Visitados 30 d','Nunca visitados','Acciones vencidas','Oport. abiertas','Ganadas mes'],1)+'<tbody>'+rowsR+'</tbody></table></div>':'')
- +'<h3 style="margin:14px 0 6px">Por VND</h3><div style="overflow:auto"><table class="tb">'+th(['VND','Regional','Cuentas','Visitas mes','Visitados 30 d','Nunca visitados','Acciones vencidas','Oport. abiertas'],2)+'<tbody>'+rowsG+'</tbody></table></div></div>'
- +'<div class="grid2"><div class="card"><h2 style="margin-top:0">Prioridad alta sin visita (+60 d)</h2><div style="overflow:auto"><table class="tb"><tbody>'+(hot.map(o=>cr(o)+'<td class="n">'+o.x.s+'</td><td class="mu">'+(o.lv?'Últ. visita '+o.lv:'Nunca visitado')+'</td></tr>').join('')||'<tr><td class="mu">Sin casos</td></tr>')+'</tbody></table></div></div>'
- +'<div class="card"><h2 style="margin-top:0">Dejaron de comprar <small class="mu" style="font-weight:400">· '+lostN+' sin compra hace +180 d</small></h2><div style="overflow:auto"><table class="tb"><tbody>'+(lost.map(o=>cr(o)+'<td class="n">Bs '+nf(o.x.v24)+'</td><td class="mu">hace '+o.x.db+' d</td></tr>').join('')||'<tr><td class="mu">Sin casos</td></tr>')+'</tbody></table></div></div></div>'
- +'<div class="card" style="margin-bottom:12px"><h2 style="margin-top:0">Acciones vencidas</h2><div style="overflow:auto"><table class="tb"><tbody>'+(late.map(v=>{const c=cm[v.cid];return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.rg)+' · '+esc(nmOf(c))+'</span></td><td>'+esc(v.proxTxt||v.prox)+'</td><td class="mu">vencida '+v.prox+'</td></tr>'}).join('')||'<tr><td class="mu">Ninguna acción vencida</td></tr>')+'</tbody></table></div></div>';
+ const kp=(c,l,v,s)=>'<div class="'+c+'"><b>'+l+'</b><span>'+v+'</span>'+(s?' <small>'+s+'</small>':'')+'</div>';
+ const cov=pn(tot.v30,tot.n);
+ return '<div class="cc"><div class="cc-h"><h2>Centro de comando · seguimiento</h2><small class="mu">'+sub+'</small></div>'
+ +'<div class="cc-k">'+kp('k1','Clientes',nf(tot.n))+kp('k2','Sin VND asignado',nf(tot.sinv))+kp('k3','Visitas del mes',nf(tot.vm),'ant. '+tot.vp)+kp('k4','Visitados en 30 d',cov===null?'—':cov+'%',tot.v30+' clientes')+kp('k5','Acciones vencidas',nf(tot.acc))+kp('k6','Oport. abiertas','Bs '+nf(tot.ob),tot.oa+' abiertas')+kp('k7','Ganadas del mes','Bs '+nf(tot.gan))+'</div>'
+ +(UOWNER?'<div class="cc-s s-reg"><h3>Por regional</h3><table>'+th(['Regional','Clientes','Sin VND','Visitas mes','Visitados 30 d','Nunca visitados','Acciones vencidas','Oport. abiertas','Ganadas mes'],1)+'<tbody>'+rowsR+'</tbody></table></div>':'')
+ +'<div class="cc-s s-vnd"><h3>Por VND</h3><table>'+th(['VND','Regional','Cuentas','Visitas mes','Visitados 30 d','Nunca visitados','Acciones vencidas','Oport. abiertas'],2)+'<tbody>'+rowsG+'</tbody></table></div>'
+ +'<div class="cc-g"><div class="cc-s s-hot"><h3>Prioridad alta sin visita <small>(+60 d)</small></h3><table><tbody>'+(hot.map(o=>cr(o)+'<td class="n"><span class="pc pr">'+o.x.s+'</span></td><td class="mu">'+(o.lv?'Últ. visita '+o.lv:'Nunca visitado')+'</td></tr>').join('')||'<tr><td class="mu">Sin casos</td></tr>')+'</tbody></table></div>'
+ +'<div class="cc-s s-lost"><h3>Dejaron de comprar <small>· '+lostN+' sin compra hace +180 d</small></h3><table><tbody>'+(lost.map(o=>cr(o)+'<td class="n"><b>Bs '+nf(o.x.v24)+'</b></td><td class="mu">hace '+o.x.db+' d</td></tr>').join('')||'<tr><td class="mu">Sin casos</td></tr>')+'</tbody></table></div></div>'
+ +'<div class="cc-s s-late"><h3>Acciones vencidas</h3><table><tbody>'+(late.map(v=>{const c=cm[v.cid];return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br>'+rgc(c.rg)+' <span class="mu">'+esc(nmOf(c))+'</span></td><td>'+esc(v.proxTxt||v.prox)+'</td><td class="mu">vencida '+v.prox+'</td></tr>'}).join('')||'<tr><td class="mu">Ninguna acción vencida</td></tr>')+'</tbody></table></div></div>';
 }
 function vPanel(){vPanelBase();if(UOWNER||isAdmAny()){const d=document.createElement('div');d.innerHTML=segHTML();$('#app').prepend(d);bindRows()}}
 function vPanelBase(){
