@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-3</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-4</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -112,7 +112,7 @@ function eqpCard(map,sv){
    try{m.textContent='Creando usuario…';const a2=firebase.initializeApp(FB_CFG,'sec'+Date.now());try{await a2.auth().createUserWithEmailAndPassword(e,pw);await a2.auth().signOut()}finally{await a2.delete()}}
    catch(er){if(er.code!=='auth/email-already-in-use'){m.textContent='No se pudo crear el usuario: '+(er.message||er.code);return}}}
   EQP[e]={n:$('#qn').value.trim(),rg:$('#qr').value,rol:$('#qo').value};if(!map[e])map[e]='all';sv(map)};
- document.querySelectorAll('[data-qr]').forEach(b=>b.onclick=async()=>{try{await auth.sendPasswordResetEmail(b.dataset.qr);warn('Se envió a '+b.dataset.qr+' un correo para crear o restablecer su clave.')}catch(er){warn('No se pudo enviar el correo: '+(er.message||er.code))}});
+ document.querySelectorAll('[data-qr]').forEach(b=>b.onclick=async()=>{const t=b.textContent,m=$('#qm');b.disabled=true;b.textContent='Enviando…';try{await auth.sendPasswordResetEmail(b.dataset.qr);b.textContent='Enviado ✔';m.textContent='Se envió a '+b.dataset.qr+' un correo para crear o restablecer su clave. Si no llega en unos minutos, revisa spam y que ese correo tenga usuario creado.';m.style.cssText='color:#16a34a;font-weight:700'}catch(er){b.textContent=t;b.disabled=false;m.textContent='No se pudo enviar a '+b.dataset.qr+': '+(er.code==='auth/user-not-found'?'ese correo no tiene usuario creado.':(er.message||er.code));m.style.cssText='color:#dc2626;font-weight:700'}m.scrollIntoView({block:'center'})});
  document.querySelectorAll('[data-qx]').forEach(b=>b.onclick=()=>{delete EQP[b.dataset.qx];sv(map)})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 // ---------- persistencia
@@ -166,7 +166,7 @@ function vPanel(){
  +'<div class="grid2"><div class="card"><h2 style="margin-top:0">Visitas por semana</h2>'+bars(wk.map(w=>w[1]),wk.map(w=>w[0]))+'</div><div class="card"><h2 style="margin-top:0">Embudo</h2>'+ETAPAS.map(e=>{const l=op.filter(o=>o.etapa===e);return '<div class="row" style="margin:3px 0"><b style="width:100px">'+e+'</b><span>'+l.length+' · Bs '+nf(l.reduce((a,o)=>a+(+o.monto||0),0))+'</span></div>'}).join('')+'</div></div>'
  +'<h2>A visitar primero</h2>'+tblCli(sc.slice(0,12))+'<div class="note">Prioridad = valor de compras 2024–2026 + días sin comprar + caída vs 2025 + días sin visita. Las ventas cargadas llegan al 30-sep-2026.</div>';
  bindRows()}
-function tblCli(rows){return '<div class="tw"><table><thead><tr><th>Cliente</th><th>Segmento</th><th>Vendedor frecuente</th><th>IVT asignado</th><th class="n">Compras 24–26 Bs</th><th>Últ. compra</th><th>Últ. visita</th><th>Prioridad</th><th>Motivo</th></tr></thead><tbody>'+rows.map(({c,x})=>{const s=sem(x.s);return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.id)+' · '+esc(c.rg)+'</span></td><td>'+segChips(c.s)+'</td><td>'+esc(c.vend)+'</td><td>'+ivtCell(c)+'</td><td class="n">'+nf(x.v24)+'</td><td>'+(lastBuy(c)||'—')+'</td><td>'+(lastVisit(c.id)||'—')+'</td><td><span class="chip '+s[0]+'">'+s[1]+' '+x.s+'</span></td><td class="mu">'+esc(x.why.join(' · '))+'</td></tr>'}).join('')+'</tbody></table></div>'}
+function tblCli(rows){return '<div class="tw"><table><thead><tr><th>Cliente</th><th>Regional</th><th>Segmento</th><th>Vendedor frecuente</th><th>IVT asignado</th><th class="n">Compras 24–26 Bs</th><th>Últ. compra</th><th>Últ. visita</th><th>Prioridad</th><th>Motivo</th></tr></thead><tbody>'+rows.map(({c,x})=>{const s=sem(x.s);return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.id)+' · '+esc(c.rg)+'</span></td><td><b>'+esc(c.rg)+'</b></td><td>'+segChips(c.s)+'</td><td>'+esc(c.vend)+'</td><td>'+ivtCell(c)+'</td><td class="n">'+nf(x.v24)+'</td><td>'+(lastBuy(c)||'—')+'</td><td>'+(lastVisit(c.id)||'—')+'</td><td><span class="chip '+s[0]+'">'+s[1]+' '+x.s+'</span></td><td class="mu">'+esc(x.why.join(' · '))+'</td></tr>'}).join('')+'</tbody></table></div>'}
 function bindRows(){document.querySelectorAll('tr.cl').forEach(r=>r.onclick=()=>ficha(r.dataset.id))}
 function vCli(){
  const rgs=[...new Set(all().map(c=>c.rg))].sort();
