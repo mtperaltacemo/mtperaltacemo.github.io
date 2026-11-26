@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v23nov-6</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-1</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -81,8 +81,34 @@ const nf=x=>Number(x||0).toLocaleString('en-US',{maximumFractionDigits:0});
 const today=()=>new Date().toISOString().slice(0,10);
 const days=d=>d?Math.floor((Date.now()-new Date(d+'T12:00:00').getTime())/864e5):null;
 const addDays=(n)=>new Date(Date.now()+n*864e5).toISOString().slice(0,10);
-let DB=null,UID='local',UOWNER=false,CL=[],VEND=[],ST={},VIS={},OPP={},EQ={},MAT=[],HIST={},USERS={},ME=null,view='panel',F={seg:'',rg:'',vid:'',est:'',sem:'',q:'',sort:'score'};
+let DB=null,UID='local',UOWNER=false,CL=[],VEND=[],ST={},VIS={},OPP={},EQ={},MAT=[],HIST={},USERS={},ME=null,view='panel',F={seg:'',rg:'',vid:'',ivt:'',est:'',sem:'',q:'',sort:'score'};
 const mem={cli:{},vis:{},opp:{},users:{}};
+let EQP={};const LOADED={};
+const RGS=['ORIENTE','OCCIDENTE','CENTRO','OTRO'];
+const ivtOf=c=>{const s=ST[c.id];return(s&&s.ivt)||''};
+const isAdmAny=()=>(EQP[USEREMAIL]||{}).rol==='admin';
+const isAdmRg=c=>{if(UOWNER)return true;const u=EQP[USEREMAIL];return !!u&&u.rol==='admin'&&u.rg===c.rg};
+const canSee=c=>{if(UOWNER)return true;if(!LOADED.cli)return false;const a=ivtOf(c);return !a||a===USEREMAIL||isAdmRg(c)};
+const myName=()=>((EQP[USEREMAIL]||{}).n)||USEREMAIL;
+const ivtList=rg=>Object.entries(EQP).filter(([e,u])=>u.rol!=='admin'&&(!rg||!u.rg||u.rg===rg)).map(([e,u])=>[e,u.n||e,u.rg||'']);
+const NEWIVT=()=>UOWNER||isAdmAny()?{}:{ivt:USEREMAIL,ivtName:myName()};
+const ivtCell=c=>{const s=ST[c.id];const a=s&&s.ivt;return a?'<span class="chip" style="background:#1d4ed8;color:#fff">'+esc(s.ivtName||a)+'</span>':'<span class="mu">Sin asignar</span>'};
+const ivtF=c=>{if(!F.ivt)return true;const a=ivtOf(c);if(F.ivt==='_none')return !a;if(F.ivt==='_me')return a===USEREMAIL;return a===F.ivt};
+const ivtOpts=()=>'<option value="_none">Sin IVT asignado</option>'+(UOWNER?'':'<option value="_me">Mis cuentas</option>')+((UOWNER||isAdmAny())?ivtList().map(i=>'<option value="'+esc(i[0])+'">'+esc(i[1])+'</option>').join(''):'');
+function ivtBox(c){const s=ST[c.id]||{},a=s.ivt||'',adm=isAdmRg(c);let h='<div class="w card" style="background:var(--pn2)"><b>IVT asignado:</b> '+(a?esc(s.ivtName||a):'<span class="mu">Sin asignar (cualquier IVT puede tomarla)</span>');
+ if(adm){const L=ivtList(UOWNER?'':c.rg);h+='<div class="row"><select id="f_ivt"><option value="">Sin asignar</option>'+L.map(i=>'<option value="'+esc(i[0])+'"'+(i[0]===a?' selected':'')+'>'+esc(i[1])+(i[2]?' · '+i[2]:'')+'</option>').join('')+(a&&!L.some(i=>i[0]===a)?'<option value="'+esc(a)+'" selected>'+esc(s.ivtName||a)+'</option>':'')+'</select><button type="button" class="g" id="ivt_ok">Guardar IVT asignado</button></div><div class="note">Solo el IVT asignado y los administradores ven esta cuenta.</div>'}
+ else if(!a)h+='<div class="row"><button type="button" id="ivt_tom">Tomar esta cuenta</button></div><div class="note">Al tomarla, solo tú y los administradores la verán.</div>';
+ else h+=' <span class="note">(es tu cuenta; para liberarla o reasignarla pide al administrador)</span>';
+ return h+'</div>'}
+function ivtBind(c){const id=c.id,b1=$('#ivt_ok'),b2=$('#ivt_tom');
+ if(b1)b1.onclick=()=>{const e=$('#f_ivt').value;const nm=e?((EQP[e]||{}).n||e):'';put('cli',id,{...(ST[id]||{}),ivt:e,ivtName:nm});$('#ov').hidden=true};
+ if(b2)b2.onclick=async()=>{try{const ref=fs.collection('crm_cli').doc(id);const res=await fs.runTransaction(async t=>{const d=await t.get(ref);const cur=d.exists?d.data():{};if(cur.ivt&&cur.ivt!==USEREMAIL)return false;t.set(ref,{...cur,ivt:USEREMAIL,ivtName:myName()});return true});
+  if(res){ST[id]={...(ST[id]||{}),ivt:USEREMAIL,ivtName:myName()};$('#ov').hidden=true;render()}else{warn('Otro IVT ya tomó esta cuenta.');$('#ov').hidden=true}}catch(e){warn('No se pudo tomar la cuenta: '+(e.message||e.code))}}}
+function eqpCard(map,sv){
+ const rows=Object.entries(EQP).map(([e,u])=>'<tr><td>'+esc(e)+'</td><td>'+esc(u.n||'')+'</td><td>'+esc(u.rg||'—')+'</td><td>'+(u.rol==='admin'?'Administrador regional':'IVT')+'</td><td><button class="d sm" data-qx="'+esc(e)+'">Quitar</button></td></tr>').join('');
+ $('#app').insertAdjacentHTML('beforeend','<div class="card" style="margin-top:10px"><b>4. IVTs y administradores por regional</b><div class="note">IVT: ve sus cuentas asignadas y las cuentas sin asignar. Administrador regional: además ve y asigna las cuentas de su regional. Tú (administrador general) ves todo. Al agregar un correo nuevo se le da acceso con perfil "Todo"; antes crea su usuario en Firebase → Authentication.</div><div class="tw"><table><thead><tr><th>Correo</th><th>Nombre</th><th>Regional</th><th>Rol</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="row"><input id="qe" type="email" placeholder="correo" style="flex:1;min-width:180px"><input id="qn" placeholder="nombre (como se mostrará)" style="flex:1;min-width:160px"><select id="qr">'+RGS.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="qo"><option value="ivt">IVT</option><option value="admin">Administrador regional</option></select><button id="qa">Agregar / actualizar</button></div></div>');
+ $('#qa').onclick=()=>{const e=$('#qe').value.trim().toLowerCase();if(!e)return;EQP[e]={n:$('#qn').value.trim(),rg:$('#qr').value,rol:$('#qo').value};if(!map[e])map[e]='all';sv(map)};
+ document.querySelectorAll('[data-qx]').forEach(b=>b.onclick=()=>{delete EQP[b.dataset.qx];sv(map)})}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 // ---------- persistencia
 async function put(col,id,data,merge){
@@ -92,12 +118,12 @@ async function put(col,id,data,merge){
  try{const r=DB.collection('crm_'+col).doc(id);await(merge?r.set({...(store[id])}):r.set(data))}catch(e){warn('No se pudo guardar: '+(e.message||e.code||e))}}
 async function del(col,id){const store={cli:ST,vis:VIS,opp:OPP,eq:EQ}[col];delete store[id];render();if(DB)try{await DB.collection('crm_'+col).doc(id).delete()}catch(e){warn('No se pudo borrar: '+(e.message||e.code))}}
 function warn(t){$('#warn').innerHTML=t?'<div class="warn">'+esc(t)+'</div>':''}
-function sub(col,store){DB.collection('crm_'+col).onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,o);render()},e=>warn('Error de datos compartidos: '+(e.message||e.code)))}
+function sub(col,store){DB.collection('crm_'+col).onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());Object.keys(store).forEach(k=>delete store[k]);Object.assign(store,o);LOADED[col]=1;render()},e=>warn('Error de datos compartidos: '+(e.message||e.code)))}
 // ---------- clientes y prioridad
 const ov=c=>{const t=ST[c.id];return t&&t.respVid?{...c,vid:t.respVid,vend:t.respName||c.vend}:c};
 const cli=id=>{const c=CL.find(c=>c.id===id)||(ST[id]&&ST[id].manual?manualCli(id):null);return c?ov(c):null};
 function manualCli(id){const s=ST[id];return{id,n:s.n,nit:s.nit||'',s:s.seg||'A',vend:s.vendName||'',vid:s.vid||'',ce:'',rg:s.rg||'OTRO',va:[0,0,0,0,0,0],vg:[0,0,0,0,0,0],la:'',lg:'',nt:0,top:[],mk:[],manual:true}}
-const all=()=>CL.concat(Object.keys(ST).filter(k=>ST[k].manual).map(manualCli)).map(ov);
+const all=()=>CL.concat(Object.keys(ST).filter(k=>ST[k].manual).map(manualCli)).map(ov).filter(canSee);
 const vtot=c=>c.va.map((x,i)=>x+c.vg[i]);
 const lastBuy=c=>[c.la,c.lg].filter(Boolean).sort().pop()||'';
 function lastVisit(id){let m='';Object.values(VIS).forEach(v=>{if(v.cid===id&&v.estado!=='plan'&&v.fecha>m)m=v.fecha});return m}
@@ -110,8 +136,8 @@ function score(c){const t=vtot(c);const v24=t[3]+t[4]+t[5];let s=Math.min(40,Mat
  return{s:Math.round(s),why,db,dv,v24}}
 const sem=s=>s>=60?['sr','Alta']:s>=40?['sy','Media']:['sg','Baja'];
 const segChips=s=>(s.includes('A')?'<span class="chip cA">Línea Amarilla</span>':'')+(s.includes('G')?'<span class="chip cG">Agrícola</span>':'');
-function mine(c){if(!ME||ME==='all')return true;if(ME.startsWith('seg:'))return c.s.includes(ME.slice(4));return c.vid===ME}
-function mr(v){if(!ME||ME==='all')return true;if(ME.startsWith('seg:')){const c=cli(v.cid);return !!c&&c.s.includes(ME.slice(4))}return v.vid===ME}
+function mine(c){if(!canSee(c))return false;if(!ME||ME==='all')return true;if(ME.startsWith('seg:'))return c.s.includes(ME.slice(4));return c.vid===ME}
+function mr(v){if(!UOWNER){const c0=cli(v.cid);if(c0&&!canSee(c0))return false}if(!ME||ME==='all')return true;if(ME.startsWith('seg:')){const c=cli(v.cid);return !!c&&c.s.includes(ME.slice(4))}return v.vid===ME}
 // ---------- vistas
 function render(){
  $('#tabs').innerHTML=TABS.map(t=>'<button class="tab'+(view===t[0]?' on':'')+'" data-v="'+t[0]+'">'+t[1]+'</button>').join('')+'<span style="flex:1"></span><select id="me" title="Soy el vendedor"><option value="all">Ver todo el equipo</option><option value="seg:A"'+(ME==='seg:A'?' selected':'')+'>Perfil: solo Línea Amarilla</option><option value="seg:G"'+(ME==='seg:G'?' selected':'')+'>Perfil: solo Agrícola</option>'+VEND.map(v=>'<option value="'+v[0]+'"'+(ME===v[0]?' selected':'')+'>'+esc(v[1])+' ('+v[2]+')</option>').join('')+'</select>';
@@ -135,19 +161,19 @@ function vPanel(){
  +'<div class="grid2"><div class="card"><h2 style="margin-top:0">Visitas por semana</h2>'+bars(wk.map(w=>w[1]),wk.map(w=>w[0]))+'</div><div class="card"><h2 style="margin-top:0">Embudo</h2>'+ETAPAS.map(e=>{const l=op.filter(o=>o.etapa===e);return '<div class="row" style="margin:3px 0"><b style="width:100px">'+e+'</b><span>'+l.length+' · Bs '+nf(l.reduce((a,o)=>a+(+o.monto||0),0))+'</span></div>'}).join('')+'</div></div>'
  +'<h2>A visitar primero</h2>'+tblCli(sc.slice(0,12))+'<div class="note">Prioridad = valor de compras 2024–2026 + días sin comprar + caída vs 2025 + días sin visita. Las ventas cargadas llegan al 30-sep-2026.</div>';
  bindRows()}
-function tblCli(rows){return '<div class="tw"><table><thead><tr><th>Cliente</th><th>Segmento</th><th>Responsable</th><th class="n">Compras 24–26 Bs</th><th>Últ. compra</th><th>Últ. visita</th><th>Prioridad</th><th>Motivo</th></tr></thead><tbody>'+rows.map(({c,x})=>{const s=sem(x.s);return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.id)+' · '+esc(c.rg)+'</span></td><td>'+segChips(c.s)+'</td><td>'+esc(c.vend)+'</td><td class="n">'+nf(x.v24)+'</td><td>'+(lastBuy(c)||'—')+'</td><td>'+(lastVisit(c.id)||'—')+'</td><td><span class="chip '+s[0]+'">'+s[1]+' '+x.s+'</span></td><td class="mu">'+esc(x.why.join(' · '))+'</td></tr>'}).join('')+'</tbody></table></div>'}
+function tblCli(rows){return '<div class="tw"><table><thead><tr><th>Cliente</th><th>Segmento</th><th>Vendedor frecuente</th><th>IVT asignado</th><th class="n">Compras 24–26 Bs</th><th>Últ. compra</th><th>Últ. visita</th><th>Prioridad</th><th>Motivo</th></tr></thead><tbody>'+rows.map(({c,x})=>{const s=sem(x.s);return '<tr class="cl" data-id="'+esc(c.id)+'"><td><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.id)+' · '+esc(c.rg)+'</span></td><td>'+segChips(c.s)+'</td><td>'+esc(c.vend)+'</td><td>'+ivtCell(c)+'</td><td class="n">'+nf(x.v24)+'</td><td>'+(lastBuy(c)||'—')+'</td><td>'+(lastVisit(c.id)||'—')+'</td><td><span class="chip '+s[0]+'">'+s[1]+' '+x.s+'</span></td><td class="mu">'+esc(x.why.join(' · '))+'</td></tr>'}).join('')+'</tbody></table></div>'}
 function bindRows(){document.querySelectorAll('tr.cl').forEach(r=>r.onclick=()=>ficha(r.dataset.id))}
 function vCli(){
  const rgs=[...new Set(all().map(c=>c.rg))].sort();
- $('#app').innerHTML='<div class="row"><input id="q" placeholder="Buscar cliente, ID o NIT…" value="'+esc(F.q)+'" style="flex:1;min-width:180px"><select id="fs"><option value="">Todos los segmentos</option><option value="A">Línea Amarilla</option><option value="G">Agrícola</option></select><select id="fr"><option value="">Todas las regionales</option>'+rgs.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fv"><option value="">Todos los vendedores</option>'+VEND.map(v=>'<option value="'+v[0]+'">'+esc(v[1])+'</option>').join('')+'</select><select id="fe"><option value="">Todo estado</option>'+ESTADOS.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fm"><option value="">Toda prioridad</option><option value="sr">Alta</option><option value="sy">Media</option><option value="sg">Baja</option></select><select id="fo"><option value="score">Orden: prioridad</option><option value="v24">Orden: compras 24–26</option><option value="db">Orden: días sin comprar</option><option value="n">Orden: nombre</option></select><button id="nuevo">+ Prospecto</button></div><div id="lst"></div>';
- const set=(id,k)=>{const e=$(id);e.value=F[k];e.onchange=e.oninput=()=>{F[k]=e.value;LIM=150;list()}};set('#q','q');set('#fs','seg');set('#fr','rg');set('#fv','vid');set('#fe','est');set('#fm','sem');set('#fo','sort');
+ $('#app').innerHTML='<div class="row"><input id="q" placeholder="Buscar cliente, ID o NIT…" value="'+esc(F.q)+'" style="flex:1;min-width:180px"><select id="fs"><option value="">Todos los segmentos</option><option value="A">Línea Amarilla</option><option value="G">Agrícola</option></select><select id="fr"><option value="">Todas las regionales</option>'+rgs.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fv"><option value="">Todos los vend. frecuentes</option>'+VEND.map(v=>'<option value="'+v[0]+'">'+esc(v[1])+'</option>').join('')+'</select><select id="fi"><option value="">Todos los IVT</option>'+ivtOpts()+'</select><select id="fe"><option value="">Todo estado</option>'+ESTADOS.map(r=>'<option>'+r+'</option>').join('')+'</select><select id="fm"><option value="">Toda prioridad</option><option value="sr">Alta</option><option value="sy">Media</option><option value="sg">Baja</option></select><select id="fo"><option value="score">Orden: prioridad</option><option value="v24">Orden: compras 24–26</option><option value="db">Orden: días sin comprar</option><option value="n">Orden: nombre</option></select><button id="nuevo">+ Prospecto</button></div><div id="lst"></div>';
+ const set=(id,k)=>{const e=$(id);e.value=F[k];e.onchange=e.oninput=()=>{F[k]=e.value;LIM=150;list()}};set('#q','q');set('#fs','seg');set('#fr','rg');set('#fv','vid');set('#fi','ivt');set('#fe','est');set('#fm','sem');set('#fo','sort');
  $('#nuevo').onclick=()=>prospecto();
  list()}
 let LIM=150;
 function list(){
  let r=all().filter(c=>mine(c)||F.vid).map(c=>({c,x:score(c)}));
  const q=F.q.toLowerCase();
- r=r.filter(({c,x})=>(!q||(c.n+c.id+c.nit).toLowerCase().includes(q))&&(!F.seg||c.s.includes(F.seg))&&(!F.rg||c.rg===F.rg)&&(!F.vid||c.vid===F.vid)&&(!F.est||est(c)===F.est)&&(!F.sem||sem(x.s)[0]===F.sem));
+ r=r.filter(({c,x})=>(!q||(c.n+c.id+c.nit).toLowerCase().includes(q))&&(!F.seg||c.s.includes(F.seg))&&(!F.rg||c.rg===F.rg)&&(!F.vid||c.vid===F.vid)&&ivtF(c)&&(!F.est||est(c)===F.est)&&(!F.sem||sem(x.s)[0]===F.sem));
  r.sort((a,b)=>F.sort==='n'?a.c.n.localeCompare(b.c.n):F.sort==='v24'?b.x.v24-a.x.v24:F.sort==='db'?(b.x.db??9999)-(a.x.db??9999):b.x.s-a.x.s);
  $('#lst').innerHTML='<div class="note" style="margin-bottom:4px">'+r.length+' clientes'+(r.length>LIM?' (se muestran '+LIM+')':'')+'</div>'+tblCli(r.slice(0,LIM))+(r.length>LIM?'<div class="row" style="justify-content:center;margin:10px 0"><button id="mas">Ver 150 más</button><button id="todos" class="sec">Ver todos ('+r.length+')</button></div>':'');
  const mb=$('#mas');if(mb)mb.onclick=()=>{LIM+=150;list()};const tb=$('#todos');if(tb)tb.onclick=()=>{LIM=r.length;list()};bindRows()}
@@ -160,7 +186,7 @@ function ficha(id){const c=cli(id);if(!c)return;const s=ST[id]||{};const x=score
  +'<div class="kpis" style="margin-top:8px"><div class="kpi"><b>Prioridad</b><span>'+sem(x.s)[1]+' '+x.s+'</span></div><div class="kpi am"><b>Última compra</b><span style="font-size:15px">'+(lastBuy(c)||'—')+(x.db!=null?' ('+x.db+' d)':'')+'</span></div><div class="kpi"><b>Última visita</b><span style="font-size:15px">'+(lastVisit(id)||'Nunca')+'</span></div><div class="kpi"><b>Compras 2021–26 Bs</b><span>'+nf(t.reduce((a,b)=>a+b,0))+'</span></div></div>'
  +'<div class="grid2"><div class="card"><b>Compras por año (Bs)</b>'+bars(t,[2021,2022,2023,2024,2025,2026])+'<div class="note">Amarilla: '+c.va.map(nf).join(' · ')+'<br>Agrícola: '+c.vg.map(nf).join(' · ')+'</div></div><div class="card"><b>Productos que más compra</b>'+(c.top.length?'<table>'+c.top.map(p=>'<tr><td>'+esc(p[1])+'</td><td class="n">Bs '+nf(p[2])+'<br><span class="mu">'+nf(p[3])+' u</span></td></tr>').join('')+'</table>':'<span class="mu">Sin compras registradas</span>')+'<div class="note">Marcas: '+esc(c.mk.join(', '))+'</div></div></div>'
  +'<h2>Historial de compras</h2><div class="card" id="hc"></div>'
- +'<h2>Gestión</h2><div class="fl"><label>Estado<select id="f_est">'+ESTADOS.map(e=>'<option'+(est(c)===e?' selected':'')+'>'+e+'</option>').join('')+'</select></label><label>Dirección / ubicación<input id="f_dir" value="'+esc(s.dir||'')+'" placeholder="Calle, zona, ciudad, finca…"></label><label>Enlace de Google Maps<input id="f_map" value="'+esc(s.mapa||'')+'" placeholder="Pega el enlace de ubicación"></label><label>Responsable (vendedor)<select id="f_resp">'+VEND.map(v=>'<option value="'+v[0]+'"'+(c.vid===v[0]?' selected':'')+'>'+esc(v[1])+'</option>').join('')+(VEND.some(v=>v[0]===c.vid)?'':'<option value="" selected>'+esc(c.vend||'Sin asignar')+'</option>')+'</select></label><div class="w" id="cts"></div><label class="w">Resumen de equipos / cultivos (texto libre)<textarea id="f_eq" placeholder="Ej.: Excavadora CAT 320, 2 tractores John Deere; soya y maíz, 300 ha">'+esc(s.equipos||'')+'</textarea></label><label class="w">Notas<textarea id="f_nt">'+esc(s.notas||'')+'</textarea></label></div>'
+ +'<h2>Gestión</h2><div class="fl"><label>Estado<select id="f_est">'+ESTADOS.map(e=>'<option'+(est(c)===e?' selected':'')+'>'+e+'</option>').join('')+'</select></label><label>Dirección / ubicación<input id="f_dir" value="'+esc(s.dir||'')+'" placeholder="Calle, zona, ciudad, finca…"></label><label>Enlace de Google Maps<input id="f_map" value="'+esc(s.mapa||'')+'" placeholder="Pega el enlace de ubicación"></label><label>Vendedor frecuente (informativo)<select id="f_resp">'+VEND.map(v=>'<option value="'+v[0]+'"'+(c.vid===v[0]?' selected':'')+'>'+esc(v[1])+'</option>').join('')+(VEND.some(v=>v[0]===c.vid)?'':'<option value="" selected>'+esc(c.vend||'Sin asignar')+'</option>')+'</select></label>'+ivtBox(c)+'<div class="w" id="cts"></div><label class="w">Resumen de equipos / cultivos (texto libre)<textarea id="f_eq" placeholder="Ej.: Excavadora CAT 320, 2 tractores John Deere; soya y maíz, 300 ha">'+esc(s.equipos||'')+'</textarea></label><label class="w">Notas<textarea id="f_nt">'+esc(s.notas||'')+'</textarea></label></div>'
  +'<div class="row"><button id="sv">Guardar ficha</button>'+((s.mapa||s.dir)?'<a href="'+esc(s.mapa||('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.dir)))+'" target="_blank" rel="noopener"><button class="g">Abrir en mapas</button></a>':'')+'<button id="nv" class="g">+ Registrar visita</button><button id="no" class="g">+ Oportunidad</button></div>'
  +eqSection(id)+'<h2>Oportunidades</h2>'+(ops.length?ops.map(([k,o])=>'<div class="op" data-o="'+k+'"><b>'+esc(o.titulo)+'</b> <span class="chip sy">'+o.etapa+'</span> Bs '+nf(o.monto)+'</div>').join(''):'<span class="mu">Sin oportunidades</span>')
  +'<h2>Historial de visitas</h2>'+(vis.length?vis.map(([k,v])=>'<div class="tl"><b>'+v.fecha+'</b> · '+esc(v.tipo||'')+(v.estado==='plan'?' <span class="chip sy">Planificada</span>':' · '+esc(v.res||''))+' <span class="mu">— '+esc(v.vendName||'')+'</span><br>'+esc(v.obs||'')+(v.prox?'<br><span class="mu">Próximo: '+esc(v.proxAccion||'')+' — '+v.prox+(v.proxHecha?' ✔':'')+'</span>':'')+(v.ubic?'<br><span class="mu">📍 '+esc(v.ubic)+'</span>':'')+(v.foto?'<img src="'+v.foto+'">':'')+'<br><button class="g sm" data-e="'+k+'">Editar</button></div>').join(''):'<span class="mu">Sin visitas registradas</span>')+'</div>';
@@ -180,11 +206,11 @@ function ficha(id){const c=cli(id);if(!c)return;const s=ST[id]||{};const x=score
   document.querySelectorAll('[data-ctx]').forEach(b=>b.onclick=()=>{CT=readCT();CT.splice(+b.dataset.ctx,1);while(CT.length<3)CT.push({n:'',cargo:'',tel:'',mail:''});drawCT()})};
  drawCT();
  $('#sv').onclick=()=>{const cts=readCT().filter(x=>x.n||x.tel||x.mail||x.cargo);const c0=cts[0]||{};put('cli',id,{...(ST[id]||{}),estado:$('#f_est').value,dir:$('#f_dir').value,mapa:$('#f_map').value,contactos:cts,tel:c0.tel||'',contacto:c0.n||'',mail:c0.mail||'',respVid:$('#f_resp').value,respName:(VEND.find(v=>v[0]===$('#f_resp').value)||[0,''])[1],equipos:$('#f_eq').value,notas:$('#f_nt').value});ov.hidden=true};
- $('#nv').onclick=()=>formVisita(id);$('#no').onclick=()=>formOpp(id);
+ $('#nv').onclick=()=>formVisita(id);$('#no').onclick=()=>formOpp(id);ivtBind(c);
  ov.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>formVisita(id,b.dataset.e));
  ov.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>formOpp(id,b.dataset.o));const ne=$('#neq');if(ne)ne.onclick=()=>formEquipo(id);ov.querySelectorAll('[data-eq]').forEach(b=>b.onclick=()=>eqView(b.dataset.eq))}
 function prospecto(){const ov=$('#ov');ov.hidden=false;ov.innerHTML='<div class="md"><h1>Nuevo prospecto</h1><div class="fl"><label class="w">Nombre / razón social<input id="p_n"></label><label>Segmento<select id="p_s"><option value="A">Línea Amarilla</option><option value="G">Agrícola</option><option value="AG">Ambos</option></select></label><label>Regional<select id="p_r"><option>ORIENTE</option><option>OCCIDENTE</option><option>CENTRO</option><option>OTRO</option></select></label><label>NIT<input id="p_nit"></label></div><div class="row"><button id="ok">Crear</button><button class="g" id="x">Cancelar</button></div></div>';
- $('#x').onclick=()=>{ov.hidden=true};$('#ok').onclick=()=>{const n=$('#p_n').value.trim();if(!n)return;const id='P'+Date.now().toString(36);const v=VEND.find(v=>v[0]===ME);put('cli',id,{manual:true,n,seg:$('#p_s').value,rg:$('#p_r').value,nit:$('#p_nit').value,vid:v?v[0]:'',vendName:v?v[1]:'',estado:'Prospecto'});ov.hidden=true;ficha(id)}}
+ $('#x').onclick=()=>{ov.hidden=true};$('#ok').onclick=()=>{const n=$('#p_n').value.trim();if(!n)return;const id='P'+Date.now().toString(36);const v=VEND.find(v=>v[0]===ME);put('cli',id,{manual:true,n,seg:$('#p_s').value,rg:$('#p_r').value,nit:$('#p_nit').value,vid:v?v[0]:'',vendName:v?v[1]:'',estado:'Prospecto',...NEWIVT()});ov.hidden=true;ficha(id)}}
 // ---------- visita
 function pickCli(sel){return '<label class="w">Cliente<input id="v_q" list="dl" value="'+(sel?esc(cli(sel).n+' ['+sel+']'):'')+'" placeholder="Escribe para buscar…"><datalist id="dl">'+all().filter(mine).slice(0,800).map(c=>'<option value="'+esc(c.n+' ['+c.id+']')+'">').join('')+'</datalist></label>'}
 function cidFrom(t){const m=t.match(/\[([^\]]+)\]\s*$/);return m?m[1]:null}
@@ -303,20 +329,21 @@ async function cargarDatos(){
  CL=[];Object.keys(o).filter(k=>k.startsWith('clientes_')).sort((a,b)=>a.split('_')[1]-b.split('_')[1]).forEach(k=>CL=CL.concat(o[k]));
  VEND=o.vendedores||[];MAT=o.materiales||[];HIST=(o.historial&&!Array.isArray(o.historial))?o.historial:{};return CL.length>0}
 async function vAdm(){
- const pf=(await fs.collection('config').doc('perfiles').get()).data()||{map:{}};const map=pf.map||{};
+ const pf=(await fs.collection('config').doc('perfiles').get()).data()||{map:{}};const map=pf.map||{};EQP=pf.equipo||{};
  $('#app').innerHTML='<h2 style="margin-top:0">Administración</h2><div class="card"><b>1. Base de clientes</b><div class="note">Clientes cargados: <b>'+CL.length+'</b>. Para cargar o actualizar la base, elige el archivo <code>crm_seed.json</code>.</div><div class="row"><input type="file" id="sd" accept=".json"><button id="sdb">Cargar base</button></div><div id="sdm" class="note"></div></div>'
  +'<div class="card" style="margin-top:10px"><b>2. Perfiles de vendedores</b><div class="note">Primero crea el usuario (correo y clave) en Firebase → Authentication. Luego asigna aquí su perfil.</div><div class="tw"><table><thead><tr><th>Correo</th><th>Perfil</th><th></th></tr></thead><tbody id="pr">'+Object.entries(map).map(([e,p])=>'<tr><td>'+esc(e)+'</td><td>'+esc(PERF_LABEL[p]||p)+'</td><td><button class="d sm" data-x="'+esc(e)+'">Quitar</button></td></tr>').join('')+'</tbody></table></div><div class="row"><input id="pe" type="email" placeholder="correo del vendedor" style="flex:1;min-width:200px"><select id="pp"><option value="A">Solo Línea Amarilla</option><option value="G">Solo Agrícola</option><option value="all">Todo</option></select><button id="pa">Agregar</button></div></div>';
  $('#app').insertAdjacentHTML('beforeend','<div class="card" style="margin-top:10px"><b>3. Respaldo</b><div class="note">Descarga una copia de todas las visitas, oportunidades, equipos y datos de clientes registrados. Se recomienda hacerlo una vez al mes y guardarlo en un lugar seguro.</div><div class="row"><button id="bk">Descargar respaldo</button></div><div id="bkm" class="note"></div></div>');
  $('#bk').onclick=async()=>{const m=$('#bkm');try{m.textContent='Preparando…';const o={fecha:new Date().toISOString(),version:1},n={};for(const c of ['cli','vis','opp','eq']){const sn=await fs.collection('crm_'+c).get();o[c]={};n[c]=sn.size;sn.docs.forEach(d=>o[c][d.id]=d.data())}const f='crm_respaldo_'+o.fecha.slice(0,10)+'.json';const b=new Blob([JSON.stringify(o)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;document.body.appendChild(a);a.click();a.remove();m.textContent='Listo: '+f+' ('+n.vis+' visitas, '+n.opp+' oportunidades, '+n.eq+' equipos, '+n.cli+' fichas de cliente). Revisa tu carpeta Descargas.'}catch(e){m.textContent='Error: '+(e.message||e)}};
  $('#sdb').onclick=async()=>{const f=$('#sd').files[0];if(!f)return;try{const d=JSON.parse(await f.text());$('#sdm').textContent='Cargando…';const w=async(id,items)=>fs.collection('seed').doc(id).set({j:JSON.stringify(items)});
   for(let i=0;i<d.clientes.length;i+=100)await w('clientes_'+(i/100),d.clientes.slice(i,i+100));await w('vendedores',d.vendedores);await w('materiales',d.materiales);if(d.historial)await w('historial',d.historial);await cargarDatos();$('#sdm').textContent='Listo: '+CL.length+' clientes cargados.'}catch(e){$('#sdm').textContent='Error: '+(e.message||e)}};
- const sv=async m=>{await fs.collection('config').doc('perfiles').set({map:m});vAdm()};
+ const sv=async m=>{await fs.collection('config').doc('perfiles').set({map:m,equipo:EQP});vAdm()};
  $('#pa').onclick=()=>{const e=$('#pe').value.trim().toLowerCase();if(!e)return;map[e]=$('#pp').value;sv(map)};
- document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{delete map[b.dataset.x];sv(map)})}
+ document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{delete map[b.dataset.x];sv(map)});eqpCard(map,sv)}
 async function entrar(u){
  USEREMAIL=(u.email||'').toLowerCase();UID=u.uid;UOWNER=USEREMAIL===String(window.ADMIN_EMAIL||'').toLowerCase();$('#out').hidden=false;
  let perfil='all';
- if(!UOWNER){try{const d=await fs.collection('config').doc('perfiles').get();perfil=((d.data()||{}).map||{})[USEREMAIL]}catch(e){}
+ try{const d=await fs.collection('config').doc('perfiles').get();const dd=d.data()||{};EQP=dd.equipo||{};perfil=(dd.map||{})[USEREMAIL]}catch(e){}
+ if(!UOWNER){
   if(!perfil){$('#tabs').innerHTML='';$('#app').innerHTML='<div class="warn">Tu usuario aún no tiene un perfil asignado. Pide al administrador que lo asigne.</div>';return}}
  let ok=false;try{ok=await cargarDatos()}catch(e){warn('No se pudieron leer los datos: '+(e.message||e.code))}
  DB={collection:n=>fs.collection(n)};
