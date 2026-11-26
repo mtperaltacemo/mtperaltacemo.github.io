@@ -63,7 +63,7 @@ tr.cl{cursor:pointer}tr.cl:hover td{background:var(--pn2)}
 .warn{background:var(--yl);color:#fff;padding:6px 10px;border-radius:8px;margin:6px 0;font-size:12px}
 .note{color:var(--mu);font-size:12px}
 </style></head><body>
-<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-4</small></h1><small id="who"></small><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
+<div class="hd"><h1><span class="logo"></span>CRM · Línea Amarilla y Agrícolas <small style="font-weight:400;opacity:.6;font-size:11px">v26nov-5</small></h1><small id="who"></small><button class="g sm" id="inst">⬇ Instalar app</button><button class="g sm" id="out" hidden>Cerrar sesión</button></div>
 <div id="warn"></div>
 <div class="tabs" id="tabs"></div>
 <div id="app"><div class="note">Cargando…</div></div>
@@ -370,5 +370,8 @@ async function boot(){
  if(!navigator.onLine)off()})();
 boot();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+let DP=null;const ib=document.getElementById('inst');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DP=e});window.addEventListener('appinstalled',()=>{ib.hidden=true});
+if((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)ib.hidden=true;
+ib.onclick=async()=>{if(DP){DP.prompt();try{await DP.userChoice}catch(e){}DP=null}else alert('Para instalar: en Chrome abre el menú ⋮ → Transmitir, guardar y compartir → Instalar página como aplicación. En iPhone (Safari): botón Compartir → Agregar a pantalla de inicio.')};
 </script>
 </body></html>
